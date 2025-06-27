@@ -39,7 +39,7 @@ export class S3Client {
         key: obj.Key!,
         size: obj.Size!,
         lastModified: obj.LastModified!,
-        contentType: obj.ContentType
+        contentType: (obj as any).ContentType || undefined
       }));
     } catch (error) {
       console.error('Error listing documents:', error);

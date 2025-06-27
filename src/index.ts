@@ -31,36 +31,37 @@ const s3Config: S3Config = {
 };
 
 // Get port from environment or use default
-const port = parseInt(process.env.MCP_SERVER_PORT || '3000');
+const port = parseInt(process.env.PORT || process.env.MCP_SERVER_PORT || '3000');
 
 // Start the HTTP server
 async function startServer() {
   try {
-    console.log('Starting Morala Bucket MCP HTTP Server...');
+    console.log('Starting Morala Bucket HTTP Server...');
     console.log(`Connecting to S3 bucket: ${s3Config.bucketName} at ${s3Config.endpoint}`);
+    console.log(`Server will run on port: ${port}`);
     
     const server = new HTTPServer(s3Config, port);
     await server.start();
     
-    console.log('HTTP Server started successfully');
-    console.log(`Server running on port ${port}`);
-    console.log(`Health check: http://localhost:${port}/health`);
-    console.log(`MCP endpoint: http://localhost:${port}/mcp`);
-    console.log(`Documents endpoint: http://localhost:${port}/documents`);
+    console.log('✅ HTTP Server started successfully');
+    console.log(`🌐 Health check: http://localhost:${port}/health`);
+    console.log(`📄 Documents API: http://localhost:${port}/documents`);
+    console.log(`🔧 MCP endpoint: http://localhost:${port}/mcp`);
+    
   } catch (error) {
-    console.error('Failed to start HTTP server:', error);
+    console.error('❌ Failed to start HTTP server:', error);
     process.exit(1);
   }
 }
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {
-  console.log('\nShutting down server...');
+  console.log('\n🛑 Shutting down server...');
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('\nShutting down server...');
+  console.log('\n🛑 Shutting down server...');
   process.exit(0);
 });
 

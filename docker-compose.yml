@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  morala-bucket-mcp:
+  morala-bucket-server:
     build: .
     ports:
       - "3000:3000"
@@ -11,7 +11,7 @@ services:
       - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - S3_REGION=${S3_REGION}
-      - MCP_SERVER_PORT=3000
+      - PORT=3000
     env_file:
       - .env
     restart: unless-stopped
@@ -20,4 +20,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s 
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.morala-bucket.rule=Host(`your-domain.com`)"
+      - "traefik.http.services.morala-bucket.loadbalancer.server.port=3000" 

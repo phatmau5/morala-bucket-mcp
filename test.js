@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import dotenv from 'dotenv';
-import { S3Client } from './src/s3-client.js';
+import { S3Client } from './src/s3-client.ts';
 
 // Load environment variables
 dotenv.config();

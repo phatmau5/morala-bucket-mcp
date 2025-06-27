@@ -1,6 +1,6 @@
-# Morala Bucket MCP Server
+# Morala Bucket HTTP Server
 
-An MCP (Model Context Protocol) server that allows you to read documents from an S3 bucket stored on Hetzner Cloud Storage. This server can be integrated with n8n workflows to access and process documents stored in your S3 bucket.
+A lightweight HTTP server that provides REST API access to documents stored in an S3 bucket on Hetzner Cloud Storage. Perfect for integration with n8n, web applications, and automation workflows.
 
 ## Features
 
@@ -9,7 +9,7 @@ An MCP (Model Context Protocol) server that allows you to read documents from an
 - **Document Metadata**: Get information about document size, type, and modification date
 - **Document Existence Check**: Verify if a specific document exists in the bucket
 - **n8n Integration**: Compatible with n8n workflows for document processing
-- **HTTP API**: RESTful API endpoints for easy integration
+- **RESTful API**: Clean HTTP endpoints for easy integration
 - **Docker Support**: Containerized deployment with Docker and Docker Compose
 
 ## Prerequisites
@@ -18,213 +18,74 @@ An MCP (Model Context Protocol) server that allows you to read documents from an
 - Access to a Hetzner Cloud Storage S3 bucket
 - S3 access credentials (Access Key ID and Secret Access Key)
 
-## Installation
+## Quick Start
 
-1. Clone this repository:
-```bash
-git clone <repository-url>
-cd morala-bucket-mcp
-```
-
-2. Install dependencies:
+### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-3. Create a `.env` file based on the example:
+### 2. Configure Environment
 ```bash
 cp env.example .env
+# Edit .env with your S3 credentials
 ```
 
-4. Configure your S3 credentials in the `.env` file:
-```env
-# S3 Configuration for Hetzner
-S3_ENDPOINT=https://your-hetzner-s3-endpoint.com
-S3_ACCESS_KEY_ID=your_access_key_id
-S3_SECRET_ACCESS_KEY=your_secret_access_key
-S3_BUCKET_NAME=your_bucket_name
-S3_REGION=eu-central-1
-
-# MCP Server Configuration
-MCP_SERVER_PORT=3000
-```
-
-5. Test your S3 connection:
+### 3. Test Connection
 ```bash
 npm run test:s3
 ```
 
-## Usage
-
-### Development Mode
+### 4. Start Server
 ```bash
+# Development
 npm run dev
-```
 
-### Production Mode
-```bash
+# Production
 npm run build
 npm start
 ```
 
-### Docker Deployment
-```bash
-# Build and run with Docker Compose
-docker-compose up -d
-
-# Or build and run manually
-docker build -t morala-bucket-mcp .
-docker run -p 3000:3000 --env-file .env morala-bucket-mcp
-```
-
 ## API Endpoints
 
-The server provides both REST API endpoints and MCP-compatible endpoints:
-
-### REST API Endpoints
-
-- `GET /health` - Health check
-- `GET /documents` - List documents (with query params: `prefix`, `maxKeys`)
-- `GET /documents/:key` - Read document content (with query param: `encoding`)
-- `HEAD /documents/:key` - Get document metadata
-- `GET /documents/:key/exists` - Check if document exists
-
-### MCP Endpoint
-
-- `POST /mcp` - MCP-compatible endpoint for tool calls
-
-## Available Tools
-
-The MCP server provides the following tools:
-
-### 1. list_documents
-Lists documents in the S3 bucket with optional filtering.
-
-**Parameters:**
-- `prefix` (optional): Filter documents by path prefix
-- `maxKeys` (optional): Maximum number of documents to return (default: 1000)
-
-**Example:**
-```json
-{
-  "name": "list_documents",
-  "arguments": {
-    "prefix": "documents/",
-    "maxKeys": 50
-  }
-}
+### Health Check
+```http
+GET /health
 ```
+Returns server status and timestamp.
 
-### 2. read_document
-Reads the content of a specific document.
-
-**Parameters:**
-- `key` (required): The S3 key (path) of the document
-- `encoding` (optional): Content encoding - "utf8" or "base64" (default: "utf8")
-
-**Example:**
-```json
-{
-  "name": "read_document",
-  "arguments": {
-    "key": "documents/report.pdf",
-    "encoding": "base64"
-  }
-}
+### List Documents
+```http
+GET /documents?prefix=docs/&maxKeys=50
 ```
+Lists documents in the bucket with optional filtering.
 
-### 3. get_document_info
-Gets metadata information about a document.
+**Query Parameters:**
+- `prefix` (optional): Filter by path prefix
+- `maxKeys` (optional): Maximum number of documents (default: 1000)
 
-**Parameters:**
-- `key` (required): The S3 key (path) of the document
-
-**Example:**
-```json
-{
-  "name": "get_document_info",
-  "arguments": {
-    "key": "documents/report.pdf"
-  }
-}
+### Read Document
+```http
+GET /documents/{key}?encoding=utf8
 ```
+Reads document content.
 
-### 4. document_exists
-Checks if a document exists in the bucket.
+**Query Parameters:**
+- `encoding` (optional): `utf8` or `base64` (default: `utf8`)
 
-**Parameters:**
-- `key` (required): The S3 key (path) of the document
-
-**Example:**
-```json
-{
-  "name": "document_exists",
-  "arguments": {
-    "key": "documents/report.pdf"
-  }
-}
+### Document Info
+```http
+HEAD /documents/{key}
 ```
+Gets document metadata.
 
-## n8n Integration
-
-### Method 1: HTTP Request Nodes
-
-Use HTTP Request nodes in n8n to call the REST API endpoints:
-
-1. **Health Check**:
-   - Method: GET
-   - URL: `http://localhost:3000/health`
-
-2. **List Documents**:
-   - Method: GET
-   - URL: `http://localhost:3000/documents?maxKeys=10`
-
-3. **Read Document**:
-   - Method: GET
-   - URL: `http://localhost:3000/documents/{{ $json.data[0].key }}?encoding=utf8`
-
-### Method 2: MCP Endpoint
-
-Use the MCP-compatible endpoint for more structured tool calls:
-
-**List Documents**:
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "tools/call",
-  "params": {
-    "name": "list_documents",
-    "arguments": {
-      "maxKeys": 10
-    }
-  }
-}
+### Check Existence
+```http
+GET /documents/{key}/exists
 ```
+Checks if document exists.
 
-**Read Document**:
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "method": "tools/call",
-  "params": {
-    "name": "read_document",
-    "arguments": {
-      "key": "documents/report.pdf",
-      "encoding": "utf8"
-    }
-  }
-}
-```
-
-### Import n8n Workflow
-
-Import the provided `n8n-example.json` file into your n8n instance for a complete working example.
-
-## Configuration
-
-### Environment Variables
+## Environment Variables
 
 | Variable | Description | Required |
 |----------|-------------|----------|
@@ -233,81 +94,100 @@ Import the provided `n8n-example.json` file into your n8n instance for a complet
 | `S3_SECRET_ACCESS_KEY` | S3 secret access key | Yes |
 | `S3_BUCKET_NAME` | Name of the S3 bucket | Yes |
 | `S3_REGION` | S3 region (e.g., eu-central-1) | Yes |
-| `MCP_SERVER_PORT` | HTTP server port (default: 3000) | No |
+| `PORT` | HTTP server port (default: 3000) | No |
 
-### Hetzner Cloud Storage Configuration
+## Deployment
 
-For Hetzner Cloud Storage, your endpoint will typically be:
+### Docker Deployment
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Or build and run manually
+docker build -t morala-bucket-server .
+docker run -p 3000:3000 --env-file .env morala-bucket-server
 ```
-https://your-bucket-name.your-location.hetzner.com
+
+### Production Deployment
+```bash
+# Build the application
+npm run build
+
+# Start production server
+npm start
 ```
 
-## Error Handling
+### Environment Configuration
+For production, set environment variables:
+```bash
+export S3_ENDPOINT="https://your-bucket.your-location.hetzner.com"
+export S3_ACCESS_KEY_ID="your_access_key"
+export S3_SECRET_ACCESS_KEY="your_secret_key"
+export S3_BUCKET_NAME="your_bucket_name"
+export S3_REGION="eu-central-1"
+export PORT="3000"
+```
 
-The server includes comprehensive error handling for:
-- Invalid S3 credentials
-- Network connectivity issues
-- Missing documents
-- Invalid parameters
-- S3 service errors
+## n8n Integration
 
-All errors are returned with descriptive messages to help with debugging.
+### Import Workflow
+Import the provided `n8n-example.json` file into your n8n instance.
+
+### Manual Setup
+1. Add an **HTTP Request** node
+2. Configure the endpoint URL (e.g., `http://your-server:3000/documents`)
+3. Use the response data in your workflow
+
+### Example n8n HTTP Request
+```json
+{
+  "method": "GET",
+  "url": "http://localhost:3000/documents",
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}
+```
 
 ## Security Considerations
 
-- Store your `.env` file securely and never commit it to version control
-- Use IAM roles and policies to limit S3 access to only necessary operations
-- Consider using temporary credentials for production deployments
-- Enable HTTPS for all communications with the S3 endpoint
-- Use Docker secrets or environment variables for production deployments
+- Store environment variables securely
+- Use HTTPS in production
+- Implement proper authentication if needed
+- Consider using IAM roles for S3 access
+- Enable CORS only for trusted domains
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Connection Refused**: Check your S3 endpoint URL and credentials
-2. **Access Denied**: Verify your S3 access key has the necessary permissions
-3. **Document Not Found**: Ensure the document key (path) is correct
-4. **Encoding Issues**: Use "base64" encoding for binary files
-
-### Testing
-
-Run the S3 connection test:
-```bash
-npm run test:s3
-```
+1. **Connection Refused**: Check S3 endpoint and credentials
+2. **Access Denied**: Verify S3 permissions
+3. **Document Not Found**: Check document key/path
+4. **Port Already in Use**: Change PORT environment variable
 
 ### Debug Mode
-
-Enable debug logging by setting the `DEBUG` environment variable:
 ```bash
 DEBUG=* npm run dev
 ```
 
-### Docker Logs
-
-Check Docker container logs:
+### Check Logs
 ```bash
+# Docker logs
 docker-compose logs -f
+
+# Application logs
+npm run dev
 ```
 
 ## License
 
 MIT License - see LICENSE file for details.
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
 ## Support
 
 For issues and questions:
 1. Check the troubleshooting section
-2. Review the error messages in the logs
-3. Verify your S3 configuration
-4. Run the test script to verify connectivity
-5. Open an issue on GitHub with detailed information 
+2. Review error messages in logs
+3. Verify S3 configuration
+4. Run the test script: `npm run test:s3` 
