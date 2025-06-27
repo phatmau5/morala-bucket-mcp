@@ -108,7 +108,23 @@ export class HTTPServer {
       try {
         const { method, params } = req.body;
         
-        if (method === 'tools/list') {
+        if (method === 'initialize') {
+          // Handle MCP initialization
+          res.json({
+            jsonrpc: '2.0',
+            id: req.body.id || 1,
+            result: {
+              protocolVersion: '2024-11-05',
+              capabilities: {
+                tools: {},
+              },
+              serverInfo: {
+                name: 'morala-bucket-mcp',
+                version: '1.0.0',
+              },
+            },
+          });
+        } else if (method === 'tools/list') {
           res.json({
             jsonrpc: '2.0',
             id: req.body.id || 1,
@@ -243,17 +259,48 @@ export class HTTPServer {
             id: req.body.id || 1,
             result,
           });
+        } else if (method === 'ping') {
+          // Handle ping method
+          res.json({
+            jsonrpc: '2.0',
+            id: req.body.id || 1,
+            result: { pong: true },
+          });
+        } else if (method === 'notifications/list') {
+          // Handle notifications/list method
+          res.json({
+            jsonrpc: '2.0',
+            id: req.body.id || 1,
+            result: { notifications: [] },
+          });
+        } else if (method === 'resources/list') {
+          // Handle resources/list method
+          res.json({
+            jsonrpc: '2.0',
+            id: req.body.id || 1,
+            result: { resources: [] },
+          });
+        } else if (method === 'prompts/list') {
+          // Handle prompts/list method
+          res.json({
+            jsonrpc: '2.0',
+            id: req.body.id || 1,
+            result: { prompts: [] },
+          });
         } else {
+          // Log unknown methods for debugging
+          console.log('Unknown MCP method:', method, 'with params:', params);
           res.status(400).json({
             jsonrpc: '2.0',
             id: req.body.id || 1,
             error: {
               code: -32601,
-              message: 'Method not found',
+              message: `Method not found: ${method}`,
             },
           });
         }
       } catch (error) {
+        console.error('MCP endpoint error:', error);
         res.status(500).json({
           jsonrpc: '2.0',
           id: req.body.id || 1,
